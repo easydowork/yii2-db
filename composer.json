@@ -1,0 +1,24 @@
+{
+    "name": "easydowork/yii2-db",
+    "description": "修改于yii2框架,独立的数据库连接组件",
+    "keywords": [
+        "database"
+    ],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "easydowork",
+            "email": "254364502@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "easydowork\\db\\" : "src/"
+        }
+    },
+    "minimum-stability": "stable"
+}
