@@ -373,6 +373,28 @@ class Connection extends BaseObject
      */
     private $_quotedColumnNames;
 
+    /**
+     * @var Connection|null
+     */
+    private static $instance;
+
+    /**
+     * init
+     */
+    public function init()
+    {
+        parent::init();
+        self::$instance = $this;
+    }
+
+    /**
+     * getInstance
+     * @return Connection|null
+     */
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
 
     /**
      * Returns a value indicating whether the DB connection is established.

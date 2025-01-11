@@ -135,6 +135,10 @@ class Query extends BaseObject implements QueryInterface, ExpressionInterface
      */
     public function createCommand($db = null)
     {
+        if ($db === null) {
+            $db = Connection::getInstance();
+        }
+
         list($sql, $params) = $db->getQueryBuilder()->build($this);
 
         $command = $db->createCommand($sql, $params);
