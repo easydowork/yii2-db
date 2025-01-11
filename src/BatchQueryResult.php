@@ -30,9 +30,25 @@ use easydowork\db\base\BaseObject;
  */
 class BatchQueryResult extends BaseObject implements \Iterator
 {
+    /**
+     * @event Event an event that is triggered when the batch query is reset.
+     * @see reset()
+     * @since 2.0.41
+     */
+    const EVENT_RESET = 'reset';
+    /**
+     * @event Event an event that is triggered when the last batch has been fetched.
+     * @since 2.0.41
+     */
+    const EVENT_FINISH = 'finish';
+    /**
+     * MSSQL error code for exception that is thrown when last batch is size less than specified batch size
+     * @see https://github.com/yiisoft/yii2/issues/10023
+     */
+    const MSSQL_NO_MORE_ROWS_ERROR_CODE = -13;
 
     /**
-     * @var Connection the DB connection to be used when performing batch query.
+     * @var Connection|null the DB connection to be used when performing batch query.
      * If null, the "db" application component will be used.
      */
     public $db;
@@ -67,11 +83,6 @@ class BatchQueryResult extends BaseObject implements \Iterator
      * @var string|int the key for the current iteration
      */
     private $_key;
-    /**
-     * @var int MSSQL error code for exception that is thrown when last batch is size less than specified batch size
-     * @see https://github.com/yiisoft/yii2/issues/10023
-     */
-    private $mssqlNoMoreRowsErrorCode = -13;
 
 
     /**
@@ -173,7 +184,7 @@ class BatchQueryResult extends BaseObject implements \Iterator
             }
         } catch (\PDOException $e) {
             $errorCode = isset($e->errorInfo[1]) ? $e->errorInfo[1] : null;
-            if ($this->getDbDriverName() !== 'sqlsrv' || $errorCode !== $this->mssqlNoMoreRowsErrorCode) {
+            if ($this->getDbDriverName() !== 'sqlsrv' || $errorCode !== self::MSSQL_NO_MORE_ROWS_ERROR_CODE) {
                 throw $e;
             }
         }

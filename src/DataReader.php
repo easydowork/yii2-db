@@ -79,7 +79,7 @@ class DataReader extends \easydowork\db\base\BaseObject implements \Iterator, \C
      * in the result set. If using the column name, be aware that the name
      * should match the case of the column, as returned by the driver.
      * @param mixed $value Name of the PHP variable to which the column will be bound.
-     * @param int $dataType Data type of the parameter
+     * @param int|null $dataType Data type of the parameter
      * @see https://www.php.net/manual/en/function.PDOStatement-bindColumn.php
      */
     public function bindColumn($column, &$value, $dataType = null)

@@ -15,6 +15,7 @@ use easydowork\db\ConstraintFinderInterface;
 use easydowork\db\ConstraintFinderTrait;
 use easydowork\db\Expression;
 use easydowork\db\ForeignKeyConstraint;
+use easydowork\db\helpers\ClassHelpers;
 use easydowork\db\IndexConstraint;
 use easydowork\db\SqlToken;
 use easydowork\db\TableSchema;
@@ -206,7 +207,7 @@ class Schema extends \easydowork\db\Schema implements ConstraintFinderInterface
      */
     public function createQueryBuilder()
     {
-        return new QueryBuilder($this->db);
+        return ClassHelpers::createObject(QueryBuilder::className(), [$this->db]);
     }
 
     /**
@@ -215,7 +216,7 @@ class Schema extends \easydowork\db\Schema implements ConstraintFinderInterface
      */
     public function createColumnSchemaBuilder($type, $length = null)
     {
-        return new ColumnSchemaBuilder($type, $length);
+        return ClassHelpers::createObject(ColumnSchemaBuilder::className(), [$type, $length]);
     }
 
     /**
@@ -362,7 +363,7 @@ class Schema extends \easydowork\db\Schema implements ConstraintFinderInterface
      * This can be either [[Transaction::READ_UNCOMMITTED]] or [[Transaction::SERIALIZABLE]].
      * @throws NotSupportedException when unsupported isolation levels are used.
      * SQLite only supports SERIALIZABLE and READ UNCOMMITTED.
-     * @see http://www.sqlite.org/pragma.html#pragma_read_uncommitted
+     * @see https://www.sqlite.org/pragma.html#pragma_read_uncommitted
      */
     public function setTransactionIsolationLevel($level)
     {

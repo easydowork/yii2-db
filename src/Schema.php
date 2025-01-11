@@ -176,7 +176,7 @@ abstract class Schema extends BaseObject
     /**
      * Obtains the metadata for the named table.
      * @param string $name table name. The table name may contain schema name if any. Do not quote the table name.
-     * @param bool $refresh
+     * @param bool $refresh whether to reload the table schema even if it is found in the cache.
      * @return TableSchema|null table metadata. `null` if the named table does not exist.
      */
     public function getTableSchema($name, $refresh = false)
@@ -188,6 +188,7 @@ abstract class Schema extends BaseObject
      * Returns the metadata for all tables in the database.
      * @param string $schema the schema of the tables. Defaults to empty string, meaning the current or default schema name.
      * @param bool $refresh whether to fetch the latest available table schemas. If this is `false`,
+     * cached data may be returned if available.
      * @return TableSchema[] the metadata for all tables in the database.
      * Each array element is an instance of [[TableSchema]] or its child class.
      */
@@ -282,7 +283,7 @@ abstract class Schema extends BaseObject
      */
     public function createQueryBuilder()
     {
-        return new QueryBuilder($this->db);
+        return ClassHelpers::createObject(QueryBuilder::className(), [$this->db]);
     }
 
     /**
@@ -291,13 +292,13 @@ abstract class Schema extends BaseObject
      * This method may be overridden by child classes to create a DBMS-specific column schema builder.
      *
      * @param string $type type of the column. See [[ColumnSchemaBuilder::$type]].
-     * @param int|string|array $length length or precision of the column. See [[ColumnSchemaBuilder::$length]].
+     * @param int|string|array|null $length length or precision of the column. See [[ColumnSchemaBuilder::$length]].
      * @return ColumnSchemaBuilder column schema builder instance
      * @since 2.0.6
      */
     public function createColumnSchemaBuilder($type, $length = null)
     {
-        return new ColumnSchemaBuilder($type, $length);
+        return ClassHelpers::createObject(ColumnSchemaBuilder::className(), [$type, $length]);
     }
 
     /**
@@ -340,7 +341,7 @@ abstract class Schema extends BaseObject
     }
 
     /**
-     * @return bool whether this DBMS supports [savepoint](http://en.wikipedia.org/wiki/Savepoint).
+     * @return bool whether this DBMS supports [savepoint](https://en.wikipedia.org/wiki/Savepoint).
      */
     public function supportsSavepoint()
     {
@@ -380,7 +381,7 @@ abstract class Schema extends BaseObject
      * This can be one of [[Transaction::READ_UNCOMMITTED]], [[Transaction::READ_COMMITTED]], [[Transaction::REPEATABLE_READ]]
      * and [[Transaction::SERIALIZABLE]] but also a string containing DBMS specific syntax to be used
      * after `SET TRANSACTION ISOLATION LEVEL`.
-     * @see http://en.wikipedia.org/wiki/Isolation_%28database_systems%29#Isolation_levels
+     * @see https://en.wikipedia.org/wiki/Isolation_%28database_systems%29#Isolation_levels
      */
     public function setTransactionIsolationLevel($level)
     {
@@ -427,7 +428,7 @@ abstract class Schema extends BaseObject
             return $str;
         }
 
-        if (mb_stripos($this->db->dsn, 'odbc:') === false && ($value = $this->db->getSlavePdo()->quote($str)) !== false) {
+        if (mb_stripos((string)$this->db->dsn, 'odbc:') === false && ($value = $this->db->getSlavePdo()->quote($str)) !== false) {
             return $value;
         }
 
@@ -672,10 +673,11 @@ abstract class Schema extends BaseObject
 
     /**
      * Returns the metadata of the given type for the given table.
+     * If there's no metadata in the cache, this method will call
      * a `'loadTable' . ucfirst($type)` named method with the table name to obtain the metadata.
      * @param string $name table name. The table name may contain schema name if any. Do not quote the table name.
      * @param string $type metadata type.
-     * @param bool $refresh whether to reload the table metadata
+     * @param bool $refresh whether to reload the table metadata even if it is found in the cache.
      * @return mixed metadata.
      * @since 2.0.13
      */
@@ -696,6 +698,7 @@ abstract class Schema extends BaseObject
      * @param string $schema the schema of the metadata. Defaults to empty string, meaning the current or default schema name.
      * @param string $type metadata type.
      * @param bool $refresh whether to fetch the latest available table metadata. If this is `false`,
+     * cached data may be returned if available.
      * @return array array of metadata.
      * @since 2.0.13
      */

@@ -13,6 +13,7 @@ namespace easydowork\db\pgsql;
  * @author Sergei Tigrov <rrr-r@ya.ru>
  * @author Dmytro Naumenko <d.naumenko.a@gmail.com>
  * @since 2.0.14
+ * @phpcs:disable Squiz.NamingConventions.ValidVariableName.PrivateNoUnderscore
  */
 class ArrayParser
 {
@@ -80,7 +81,7 @@ class ArrayParser
      *
      * @param string $value
      * @param int $i parse starting position
-     * @return null|string
+     * @return string|null
      */
     private function parseString($value, &$i)
     {

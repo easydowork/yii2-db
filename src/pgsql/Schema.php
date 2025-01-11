@@ -288,7 +288,7 @@ SQL;
      */
     public function createQueryBuilder()
     {
-        return new QueryBuilder($this->db);
+        return Yii::createObject(QueryBuilder::className(), [$this->db]);
     }
 
     /**
@@ -339,7 +339,7 @@ SQL;
         $tableSchema = $this->quoteValue($table->schemaName);
 
         //We need to extract the constraints de hard way since:
-        //http://www.postgresql.org/message-id/26677.1086673982@sss.pgh.pa.us
+        //https://www.postgresql.org/message-id/26677.1086673982@sss.pgh.pa.us
 
         $sql = <<<SQL
 select
@@ -593,8 +593,7 @@ SQL;
         $column->allowNull = $info['is_nullable'];
         $column->autoIncrement = $info['is_autoinc'];
         $column->comment = $info['column_comment'];
-        if ($info['type_scheme'] !== null && !in_array($info['type_scheme'], [$this->defaultSchema, 'pg_catalog'], true)
-        ) {
+        if ($info['type_scheme'] !== null && !in_array($info['type_scheme'], [$this->defaultSchema, 'pg_catalog'], true)) {
             $column->dbType = $info['type_scheme'] . '.' . $info['data_type'];
         } else {
             $column->dbType = $info['data_type'];

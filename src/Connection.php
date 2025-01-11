@@ -109,21 +109,22 @@ use easydowork\db\base\NotSupportedException;
  * ],
  * ```
  *
- * @property string $driverName Name of the DB driver.
+ * @property string|null $driverName Name of the DB driver. Note that the type of this property differs in
+ * getter and setter. See [[getDriverName()]] and [[setDriverName()]] for details.
  * @property-read bool $isActive Whether the DB connection is established.
  * @property-read string $lastInsertID The row ID of the last row inserted, or the last value retrieved from
  * the sequence object.
- * @property-read Connection $master The currently active master connection. `null` is returned if there is no
- * master available.
+ * @property-read Connection|null $master The currently active master connection. `null` is returned if there
+ * is no master available.
  * @property-read PDO $masterPdo The PDO instance for the currently active master connection.
  * @property QueryBuilder $queryBuilder The query builder for the current DB connection. Note that the type of
  * this property differs in getter and setter. See [[getQueryBuilder()]] and [[setQueryBuilder()]] for details.
  * @property-read Schema $schema The schema information for the database opened by this connection.
  * @property-read string $serverVersion Server version as a string.
- * @property-read Connection $slave The currently active slave connection. `null` is returned if there is no
- * slave available and `$fallbackToMaster` is false.
- * @property-read PDO $slavePdo The PDO instance for the currently active slave connection. `null` is returned
- * if no slave connection is available and `$fallbackToMaster` is false.
+ * @property-read Connection|null $slave The currently active slave connection. `null` is returned if there is
+ * no slave available and `$fallbackToMaster` is false.
+ * @property-read PDO|null $slavePdo The PDO instance for the currently active slave connection. `null` is
+ * returned if no slave connection is available and `$fallbackToMaster` is false.
  * @property-read Transaction|null $transaction The currently active transaction. Null if no active
  * transaction.
  *
@@ -145,11 +146,11 @@ class Connection extends BaseObject
      */
     public $dsn;
     /**
-     * @var string the username for establishing DB connection. Defaults to `null` meaning no username to use.
+     * @var string|null the username for establishing DB connection. Defaults to `null` meaning no username to use.
      */
     public $username;
     /**
-     * @var string the password for establishing DB connection. Defaults to `null` meaning no password to use.
+     * @var string|null the password for establishing DB connection. Defaults to `null` meaning no password to use.
      */
     public $password;
     /**
@@ -160,7 +161,7 @@ class Connection extends BaseObject
      */
     public $attributes;
     /**
-     * @var PDO the PHP PDO instance associated with this DB connection.
+     * @var PDO|null the PHP PDO instance associated with this DB connection.
      * This property is mainly managed by [[open()]] and [[close()]] methods.
      * When a DB connection is active, this property will represent a PDO instance;
      * otherwise, it will be null.
@@ -196,6 +197,7 @@ class Connection extends BaseObject
     /**
      * @var array mapping between PDO driver names and [[Schema]] classes.
      * The keys of the array are PDO driver names while the values are either the corresponding
+     * schema class names or configurations. Please refer to [[Yii::createObject()]] for
      * details on how to specify a configuration.
      *
      * This property is mainly used by [[getSchema()]] when fetching the database schema information.
@@ -208,14 +210,9 @@ class Connection extends BaseObject
         'mysql' => 'easydowork\db\mysql\Schema', // MySQL
         'sqlite' => 'easydowork\db\sqlite\Schema', // sqlite 3
         'sqlite2' => 'easydowork\db\sqlite\Schema', // sqlite 2
-        'sqlsrv' => 'easydowork\db\mssql\Schema', // newer MSSQL driver on MS Windows hosts
-        'oci' => 'easydowork\db\oci\Schema', // Oracle driver
-        'mssql' => 'easydowork\db\mssql\Schema', // older MSSQL driver on MS Windows hosts
-        'dblib' => 'easydowork\db\mssql\Schema', // dblib drivers on GNU/Linux (and maybe other OSes) hosts
-        'cubrid' => 'easydowork\db\cubrid\Schema', // CUBRID
     ];
     /**
-     * @var string Custom PDO wrapper class. If not set, it will use [[PDO]] or [[\easydowork\db\mssql\PDO]] when MSSQL is used.
+     * @var string|null Custom PDO wrapper class. If not set, it will use [[PDO]] or [[\yii\db\mssql\PDO]] when MSSQL is used.
      * @see pdo
      */
     public $pdoClass;
@@ -231,6 +228,7 @@ class Connection extends BaseObject
     /**
      * @var array mapping between PDO driver names and [[Command]] classes.
      * The keys of the array are PDO driver names while the values are either the corresponding
+     * command class names or configurations. Please refer to [[Yii::createObject()]] for
      * details on how to specify a configuration.
      *
      * This property is mainly used by [[createCommand()]] to create new database [[Command]] objects.
@@ -244,14 +242,9 @@ class Connection extends BaseObject
         'mysql' => 'easydowork\db\Command', // MySQL
         'sqlite' => 'easydowork\db\sqlite\Command', // sqlite 3
         'sqlite2' => 'easydowork\db\sqlite\Command', // sqlite 2
-        'sqlsrv' => 'easydowork\db\Command', // newer MSSQL driver on MS Windows hosts
-        'oci' => 'easydowork\db\oci\Command', // Oracle driver
-        'mssql' => 'easydowork\db\Command', // older MSSQL driver on MS Windows hosts
-        'dblib' => 'easydowork\db\Command', // dblib drivers on GNU/Linux (and maybe other OSes) hosts
-        'cubrid' => 'easydowork\db\Command', // CUBRID
     ];
     /**
-     * @var bool whether to enable [savepoint](http://en.wikipedia.org/wiki/Savepoint).
+     * @var bool whether to enable [savepoint](https://en.wikipedia.org/wiki/Savepoint).
      * Note that if the underlying DBMS does not support savepoint, setting this property to be true will have no effect.
      */
     public $enableSavepoint = true;
@@ -329,7 +322,7 @@ class Connection extends BaseObject
      * @since 2.0.12
      * @see enableProfiling
      */
-    public $enableLogging = false;
+    public $enableLogging = true;
     /**
      * @var bool whether to enable profiling of opening database connection and database queries. Defaults to true.
      * You may want to disable this option in a production environment to gain performance
@@ -337,7 +330,7 @@ class Connection extends BaseObject
      * @since 2.0.12
      * @see enableLogging
      */
-    public $enableProfiling = false;
+    public $enableProfiling = true;
     /**
      * @var bool If the database connected via pdo_dblib is SyBase.
      * @since 2.0.38
@@ -466,25 +459,7 @@ class Connection extends BaseObject
     {
         $pdoClass = $this->pdoClass;
         if ($pdoClass === null) {
-            $driver = null;
-            if ($this->_driverName !== null) {
-                $driver = $this->_driverName;
-            } elseif (($pos = strpos($this->dsn, ':')) !== false) {
-                $driver = strtolower(substr($this->dsn, 0, $pos));
-            }
-            switch ($driver) {
-                case 'mssql':
-                    $pdoClass = 'easydowork\db\mssql\PDO';
-                    break;
-                case 'dblib':
-                    $pdoClass = 'easydowork\db\mssql\DBLibPDO';
-                    break;
-                case 'sqlsrv':
-                    $pdoClass = 'easydowork\db\mssql\SqlsrvPDO';
-                    break;
-                default:
-                    $pdoClass = 'PDO';
-            }
+            $pdoClass = 'PDO';
         }
 
         $dsn = $this->dsn;
@@ -525,7 +500,7 @@ class Connection extends BaseObject
 
     /**
      * Creates a command for execution.
-     * @param string $sql the SQL statement to be executed
+     * @param string|null $sql the SQL statement to be executed
      * @param array $params the parameters to be bound to the SQL statement
      * @return Command the DB command
      */
@@ -578,7 +553,7 @@ class Connection extends BaseObject
      * @param callable $callback a valid PHP callback that performs the job. Accepts connection instance as parameter.
      * @param string|null $isolationLevel The isolation level to use for this transaction.
      * See [[Transaction::begin()]] for details.
-     * @throws \Exception if there is any exception during query. In this case the transaction will be rolled back.
+     * @throws \Throwable if there is any exception during query. In this case the transaction will be rolled back.
      * @return mixed result of callback function
      */
     public function transaction(callable $callback, $isolationLevel = null)
@@ -605,6 +580,7 @@ class Connection extends BaseObject
     /**
      * Rolls back given [[Transaction]] object if it's still active and level match.
      * In some cases rollback can fail, so this method is fail safe. Exception thrown
+     * from rollback will be caught and just logged with [[\Yii::error()]].
      * @param Transaction $transaction Transaction object given from [[beginTransaction()]].
      * @param int $level Transaction level just after [[beginTransaction()]] call.
      */
@@ -775,7 +751,7 @@ class Connection extends BaseObject
     /**
      * Returns the name of the DB driver. Based on the the current [[dsn]], in case it was not set explicitly
      * by an end user.
-     * @return string name of the DB driver
+     * @return string|null name of the DB driver
      */
     public function getDriverName()
     {
@@ -783,7 +759,7 @@ class Connection extends BaseObject
             if (($pos = strpos((string)$this->dsn, ':')) !== false) {
                 $this->_driverName = strtolower(substr($this->dsn, 0, $pos));
             } else {
-                $this->_driverName = strtolower($this->getSlavePdo()->getAttribute(PDO::ATTR_DRIVER_NAME));
+                $this->_driverName = strtolower($this->getSlavePdo(true)->getAttribute(PDO::ATTR_DRIVER_NAME));
             }
         }
 
@@ -814,7 +790,7 @@ class Connection extends BaseObject
      * When [[enableSlaves]] is true, one of the slaves will be used for read queries, and its PDO instance
      * will be returned by this method.
      * @param bool $fallbackToMaster whether to return a master PDO in case none of the slave connections is available.
-     * @return PDO the PDO instance for the currently active slave connection. `null` is returned if no slave connection
+     * @return PDO|null the PDO instance for the currently active slave connection. `null` is returned if no slave connection
      * is available and `$fallbackToMaster` is false.
      */
     public function getSlavePdo($fallbackToMaster = true)
@@ -842,7 +818,7 @@ class Connection extends BaseObject
      * Returns the currently active slave connection.
      * If this method is called for the first time, it will try to open a slave connection when [[enableSlaves]] is true.
      * @param bool $fallbackToMaster whether to return a master connection in case there is no slave connection available.
-     * @return Connection the currently active slave connection. `null` is returned if there is no slave available and
+     * @return Connection|null the currently active slave connection. `null` is returned if there is no slave available and
      * `$fallbackToMaster` is false.
      */
     public function getSlave($fallbackToMaster = true)
@@ -861,7 +837,7 @@ class Connection extends BaseObject
     /**
      * Returns the currently active master connection.
      * If this method is called for the first time, it will try to open a master connection.
-     * @return Connection the currently active master connection. `null` is returned if there is no master available.
+     * @return Connection|null the currently active master connection. `null` is returned if there is no master available.
      * @since 2.0.11
      */
     public function getMaster()
@@ -890,7 +866,7 @@ class Connection extends BaseObject
      * @param callable $callback a PHP callable to be executed by this method. Its signature is
      * `function (Connection $db)`. Its return value will be returned by this method.
      * @return mixed the return value of the callback
-     * @throws \Exception if there is any exception thrown from the callback
+     * @throws \Throwable if there is any exception thrown from the callback
      */
     public function useMaster(callable $callback)
     {
@@ -923,7 +899,7 @@ class Connection extends BaseObject
      *
      * @param array $pool the list of connection configurations in the server pool
      * @param array $sharedConfig the configuration common to those given in `$pool`.
-     * @return Connection the opened DB connection, or `null` if no server is available
+     * @return Connection|null the opened DB connection, or `null` if no server is available
      * @throws InvalidConfigException if a configuration does not specify "dsn"
      * @see openFromPoolSequentially
      */
@@ -950,10 +926,11 @@ class Connection extends BaseObject
      *
      * @param array $pool the list of connection configurations in the server pool
      * @param array $sharedConfig the configuration common to those given in `$pool`.
-     * @return Connection the opened DB connection, or `null` if no server is available
+     * @return Connection|null the opened DB connection, or `null` if no server is available
      * @throws InvalidConfigException if a configuration does not specify "dsn"
      * @since 2.0.11
      * @see openFromPool
+     * @see serverStatusCache
      */
     protected function openFromPoolSequentially(array $pool, array $sharedConfig)
     {

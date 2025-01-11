@@ -7,7 +7,6 @@
 
 namespace easydowork\db\conditions;
 
-use easydowork\db\base\InvalidParamException;
 use easydowork\db\ExpressionInterface;
 
 /**
@@ -27,7 +26,6 @@ interface ConditionInterface extends ExpressionInterface
      * @param array $operands array of corresponding operands
      *
      * @return $this
-     * @throws InvalidParamException if input parameters are not suitable for this condition
      */
     public static function fromArrayDefinition($operator, $operands);
 }

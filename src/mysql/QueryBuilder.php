@@ -8,7 +8,6 @@
 namespace easydowork\db\mysql;
 
 use easydowork\db\base\InvalidArgumentException;
-use easydowork\db\base\NotSupportedException;
 use easydowork\db\Exception;
 use easydowork\db\Expression;
 use easydowork\db\Query;
@@ -149,24 +148,6 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
     }
 
     /**
-     * {@inheritdoc}
-     * @throws NotSupportedException this is not supported by MySQL.
-     */
-    public function addCheck($name, $table, $expression)
-    {
-        throw new NotSupportedException(__METHOD__ . ' is not supported by MySQL.');
-    }
-
-    /**
-     * {@inheritdoc}
-     * @throws NotSupportedException this is not supported by MySQL.
-     */
-    public function dropCheck($name, $table)
-    {
-        throw new NotSupportedException(__METHOD__ . ' is not supported by MySQL.');
-    }
-
-    /**
      * Creates a SQL statement for resetting the sequence value of a table's primary key.
      * The sequence will be reset such that the primary key of the next new row inserted
      * will have the specified value or 1.
@@ -221,8 +202,8 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
             }
         } elseif ($this->hasOffset($offset)) {
             // limit is not optional in MySQL
-            // http://stackoverflow.com/a/271650/1106908
-            // http://dev.mysql.com/doc/refman/5.0/en/select.html#idm47619502796240
+            // https://stackoverflow.com/questions/255517/mysql-offset-infinite-rows/271650#271650
+            // https://dev.mysql.com/doc/refman/5.7/en/select.html#idm46193796386608
             $sql = "LIMIT $offset, 18446744073709551615"; // 2^64-1
         }
 
@@ -257,10 +238,17 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
         if (!$columns instanceof Query && empty($names)) {
             $tableSchema = $this->db->getSchema()->getTableSchema($table);
             if ($tableSchema !== null) {
-                $columns = !empty($tableSchema->primaryKey) ? $tableSchema->primaryKey : [reset($tableSchema->columns)->name];
+                if (!empty($tableSchema->primaryKey)) {
+                    $columns = $tableSchema->primaryKey;
+                    $defaultValue = 'NULL';
+                } else {
+                    $columns = [reset($tableSchema->columns)->name];
+                    $defaultValue = 'DEFAULT';
+                }
+
                 foreach ($columns as $name) {
                     $names[] = $this->db->quoteColumnName($name);
-                    $placeholders[] = 'DEFAULT';
+                    $placeholders[] = $defaultValue;
                 }
             }
         }
@@ -303,8 +291,7 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
     public function addCommentOnColumn($table, $column, $comment)
     {
         // Strip existing comment which may include escaped quotes
-        $definition = trim(preg_replace("/COMMENT '(?:''|[^'])*'/i", '',
-            $this->getColumnDefinition($table, $column)));
+        $definition = trim(preg_replace("/COMMENT '(?:''|[^'])*'/i", '', $this->getColumnDefinition($table, $column)));
 
         $checkRegex = '/CHECK *(\(([^()]|(?-2))*\))/';
         $check = preg_match($checkRegex, $definition, $checkMatches);
@@ -355,7 +342,7 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
      *
      * @param string $table table name
      * @param string $column column name
-     * @return null|string the column definition
+     * @return string|null the column definition
      * @throws Exception in case when table does not contain column
      */
     private function getColumnDefinition($table, $column)
@@ -391,7 +378,6 @@ class QueryBuilder extends \easydowork\db\QueryBuilder
     private function supportsFractionalSeconds()
     {
         $version = $this->db->getSlavePdo()->getAttribute(\PDO::ATTR_SERVER_VERSION);
-
         return version_compare($version, '5.6.4', '>=');
     }
 
