@@ -258,7 +258,11 @@ SQL;
      */
     public function createQueryBuilder()
     {
-        return ClassHelpers::createObject(QueryBuilder::className(), [$this->db]);
+        static $builder;
+        if(empty($builder)){
+            $builder = new QueryBuilder($this->db);
+        }
+        return $builder;
     }
 
     /**
@@ -519,7 +523,7 @@ SQL;
      */
     public function createColumnSchemaBuilder($type, $length = null)
     {
-        return ClassHelpers::createObject(ColumnSchemaBuilder::className(), [$type, $length, $this->db]);
+        return new ColumnSchemaBuilder($type, $length);
     }
 
     /**

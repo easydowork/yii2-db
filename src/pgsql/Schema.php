@@ -288,7 +288,11 @@ SQL;
      */
     public function createQueryBuilder()
     {
-        return Yii::createObject(QueryBuilder::className(), [$this->db]);
+        static $builder;
+        if(empty($builder)){
+            $builder = new QueryBuilder($this->db);
+        }
+        return $builder;
     }
 
     /**

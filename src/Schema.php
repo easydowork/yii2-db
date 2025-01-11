@@ -298,7 +298,7 @@ abstract class Schema extends BaseObject
      */
     public function createColumnSchemaBuilder($type, $length = null)
     {
-        return ClassHelpers::createObject(ColumnSchemaBuilder::className(), [$type, $length]);
+        return new ColumnSchemaBuilder($type, $length);
     }
 
     /**

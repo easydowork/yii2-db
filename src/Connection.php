@@ -638,7 +638,7 @@ class Connection extends BaseObject
      */
     public function setQueryBuilder($value)
     {
-        ClassHelpers::configure($this->getQueryBuilder(), $value);
+        ClassHelpers::createObject($this->getQueryBuilder(), $value);
         $this->_queryBuilderConfigurations[] = $value;
     }
 

@@ -207,7 +207,11 @@ class Schema extends \easydowork\db\Schema implements ConstraintFinderInterface
      */
     public function createQueryBuilder()
     {
-        return ClassHelpers::createObject(QueryBuilder::className(), [$this->db]);
+        static $builder;
+        if(empty($builder)){
+            $builder = new QueryBuilder($this->db);
+        }
+        return $builder;
     }
 
     /**
@@ -216,7 +220,7 @@ class Schema extends \easydowork\db\Schema implements ConstraintFinderInterface
      */
     public function createColumnSchemaBuilder($type, $length = null)
     {
-        return ClassHelpers::createObject(ColumnSchemaBuilder::className(), [$type, $length]);
+        return new ColumnSchemaBuilder($type, $length);
     }
 
     /**
